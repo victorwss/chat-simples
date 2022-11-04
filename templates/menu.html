@@ -1,0 +1,27 @@
+{% extends "logado.html" %}
+{% block titulo %}Chat{% endblock %}
+{% block js %}
+    {{ super() }}
+{% endblock %}
+{% block conteudo %}
+    {% if mensagem %}
+        <p class="mensagem">{{mensagem}}</p>
+    {% endif %}
+    {% if erro %}
+        <p class="erro">{{erro}}</p>
+    {% endif %}
+    {% if salas %}
+        <h1>Escolha a sua sala de chat:</h1>
+        {% for sala in salas %}
+            <div class="sala"><a href="{{ url_for('chat_html', chat_id = sala.chat_id) }}">{{ sala.nome }}</a></div>
+        {% endfor %}
+        <h1>Ou se quiser, crie a sua própria sala:</h1>
+    {% else %}
+        <div>Ainda não temos nenhuma sala de chat</div>
+        <h1>Crie a primeira sala de chat:</h1>
+    {% endif %}
+    <form action="{{ url_for('new_chat') }}" method="POST">
+        <p><label for="nome">Nome:</label> <input type="text" name="nome" id="nome" /></p>
+        <p><button type="submit">Enviar</button></p>
+    </form>
+{% endblock %}

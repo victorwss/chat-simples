@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block titulo %}Chat{% endblock %}
+{% block corpo %}
+    <header>
+        <span class="bem-vindo">Seja bem-vindo. Realize o login no sistema!</span>
+    </header>
+    {% if mensagem %}
+        <p class="mensagem">{{mensagem}}</p>
+    {% endif %}
+    {% if erro %}
+        <p class="erro">{{erro}}</p>
+    {% endif %}
+    <form action="{{ url_for('login') }}" method="POST">
+        <p><label for="login">Login:</label> <input type="text" name="login" id="login" /></p>
+        <p><label for="senha">Senha:</label> <input type="password" name="senha" id="senha" /></p>
+        <p><button type="submit">Enviar</button> <a href="{{ url_for('tela_novo_user') }}">Quero me cadastrar</a></p>
+    </form>
+{% endblock %}

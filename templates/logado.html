@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block js %}
+    {{ super() }}
+
+    function logoutClick() {
+        document.getElementById("form_logout").submit();
+    }
+{% endblock %}
+{% block corpo %}
+    <header>
+        <span class="bem-vindo">Seja bem-vindo, {{usuario_logado.nome}}!</span>
+        -
+        <span class="logout"><button type="button" onclick="javascript:logoutClick()">Logout</button></span>
+        <form action="{{ url_for('logout') }}" id="form_logout" method="POST" style="display: none"></form>
+    </header>
+    {% block conteudo required %}{% endblock %}
+{% endblock %}

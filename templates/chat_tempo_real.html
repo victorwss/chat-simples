@@ -1,0 +1,101 @@
+{% extends "logado.html" %}
+{% block titulo %}Chat - {{sala.nome}}{% endblock %}
+{% block js %}
+    {{ super() }}
+
+    const urlMensagens = "{{ url_for('mensagens', chat_id = sala.chat_id, last_msg_id = -1) }}";
+    const urlEnvio = "{{ url_for('postar', chat_id = sala.chat_id) }}";
+    const eu = "{{ usuario_logado.login }}";
+
+    let ultimaMensagem = 0;
+    let requisicaoAtiva = null;
+
+    // Retirado de https://stackoverflow.com/a/6234804/540552
+    function escapeHtml(unsafe) {
+        return unsafe
+             .replace(/&/g, "&amp;")
+             .replace(/</g, "&lt;")
+             .replace(/>/g, "&gt;")
+             .replace(/"/g, "&quot;")
+             .replace(/'/g, "&#039;");
+    }
+
+    function montarHora(t) {
+        function dois(m) {
+            if (m < 10) return "0" + m;
+            return "" + m;
+        }
+        return `${dois(t.dia)}/${dois(t.mes)}/${t.ano} ${dois(t.hora)}:${dois(t.minuto)}:${dois(t.segundo)}`;
+    }
+
+    function montarMensagem(item) {
+        console.log(item);
+        const autor = `<div class="autor">${escapeHtml(item.autor.nome)}</div>`;
+        const hora = `<div class="timestamp">${montarHora(item.hora)}</div>`;
+        const msg = `<div class="conteudo">${item.texto}</div>`;
+        const meu = eu === item.autor.login;
+        const k = meu ? "meu" : "";
+        const b1 = meu ? "" : "🗨️";
+        const b2 = meu ? "💬" : "";
+        const tudo = `<div class="mensagem-chat ${k}" id="msg_${item.msg_id}">${b1}${autor} - ${hora}${b2}${msg}</div>`;
+        return tudo;
+    }
+
+    function atualizar() {
+        // Se há uma requisição ativa incompleta, pula esta atualização.
+        if (requisicaoAtiva !== null && requisicaoAtiva.readyState !== 4) return;
+
+        // Se esta é a primetira vez que está atualizando ou a anterior já terminou, cria uma nova.
+        requisicaoAtiva = new XMLHttpRequest();
+
+        // O método open aceita mais três parâmetros opcionais.
+        // O primeiro diz se é assíncrono (true, o padrão) ou não (false). NUNCA use AJAX síncrono.
+        // Os outros dois são o login e a senha para o caso de a URL demandar autorização em cabeçalhos HTTP.
+        console.log(ultimaMensagem);
+        requisicaoAtiva.open("GET", urlMensagens.replace("-1", ultimaMensagem + 1));
+
+        // O Ajax à moda antiga utilizava o método onreadystatechange e era necessário verificar se o
+        // requisicaoAtiva.readyState tem o valor 4 (0 = requisição não enviada, 1 = método open chamado,
+        // 2 = cabeçalhos recebidos, 3 = fazendo download, e responseText contendo dados parciais, 4 = concluído).
+        // Entretanto, no presente, usar onprogress, onload e onerror é uma alternativa que produz um código mais limpo.
+        requisicaoAtiva.onload = function() {
+            if (requisicaoAtiva.status !== 200) {
+                console.log(requisicaoAtiva.responseText);
+            } else {
+                let mensagens = JSON.parse(requisicaoAtiva.responseText).mensagens;
+                let div = document.querySelector("#historico");
+                for (let idx in mensagens) {
+                    const item = mensagens[idx];
+                    const msg = montarMensagem(item);
+                    div.insertAdjacentHTML("beforeend", msg);
+                    ultimaMensagem = item.msg_id;
+                }
+                div.scrollTop = div.scrollHeight;
+            }
+        };
+        requisicaoAtiva.onerror = function() {
+            console.log(requisicaoAtiva.responseText);
+        }
+        requisicaoAtiva.timeout = 1000;
+        requisicaoAtiva.send();
+    }
+
+    const poll = setInterval(atualizar, 1000);
+
+    function enviarMensagem() {
+        let rq = new XMLHttpRequest();
+        rq.open("POST", urlEnvio);
+        area = document.querySelector("#nova_mensagem textarea");
+        rq.send(area.value);
+        area.value = "";
+    }
+{% endblock %}
+{% block conteudo %}
+    <h1>Sala {{sala.nome}}</h1>
+    <div id="historico"></div>
+    <div id="nova_mensagem">
+        <textarea></textarea>
+        <button type="button" onclick="javascript:enviarMensagem()">Enviar</button>
+        <a href="{{ url_for('menu') }}">Voltar</a>
+    </div>
+{% endblock %}
